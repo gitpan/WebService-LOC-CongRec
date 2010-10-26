@@ -16,6 +16,19 @@ meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
   version: 1.4
 name: WebService-LOC-CongRec
+provides:
+  WebService::LOC::CongRec::Crawler:
+    file: lib/Webservice/LOC/CongRec/Crawler.pm
+    version: 0.1_02
+  WebService::LOC::CongRec::Day:
+    file: lib/Webservice/LOC/CongRec/Day.pm
+    version: 0.1_02
+  WebService::LOC::CongRec::Page:
+    file: lib/Webservice/LOC/CongRec/Page.pm
+    version: 0.1_02
+  WebService::LOC::CongRec::Util:
+    file: lib/Webservice/LOC/CongRec/Util.pm
+    version: 0.1_02
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.1_01
+version: 0.1_02
