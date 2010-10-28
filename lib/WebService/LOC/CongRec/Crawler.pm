@@ -1,13 +1,13 @@
 use 5.12.0;
 
 package WebService::LOC::CongRec::Crawler;
-our $VERSION = '0.1_02';
+our $VERSION = '0.1_03';
 use Moose 1.13;
 with 'MooseX::Log::Log4perl';
 
 use WebService::LOC::CongRec::Util;
-use Webservice::LOC::CongRec::Day;
-use Webservice::LOC::CongRec::Page;
+use WebService::LOC::CongRec::Day;
+use WebService::LOC::CongRec::Page;
 use DateTime;
 
 =head1 SYNOPSIS

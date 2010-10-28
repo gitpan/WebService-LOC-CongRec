@@ -28,7 +28,7 @@ my $build = Module::Build->new (
     module_name     => 'WebService::LOC::CongRec',
     license         => 'perl',
     dist_author     => 'Drew Stephens <drew@dinomite.net>',
-    dist_version    => '0.1_02',
+    dist_version    => '0.1_03',
     test_author     => 'Drew Stephens <drew@dinomite.net>',
     dist_abstract   => 'Get the congressional record from thomas.loc.gov',
     build_requires  => {
@@ -36,6 +36,7 @@ my $build = Module::Build->new (
         'Moose'             => '1.13',
         'MooseX::Log::Log4perl'     => '0.42',
         'MooseX::Types::DateTime'   => '0.05',
+        'Test::Class'       => '0.36',
         'WWW::Mechanize'    => '1.64',
     }
 );
