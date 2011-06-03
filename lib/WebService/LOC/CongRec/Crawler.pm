@@ -1,19 +1,20 @@
-use 5.12.0;
-
 package WebService::LOC::CongRec::Crawler;
-our $VERSION = '0.1_04';
-use Moose 1.13;
+our $VERSION = '0.1';
+use Moose;
 with 'MooseX::Log::Log4perl';
 
 use WebService::LOC::CongRec::Util;
 use WebService::LOC::CongRec::Day;
 use WebService::LOC::CongRec::Page;
 use DateTime;
+use WWW::Mechanize;
 
 =head1 SYNOPSIS
 
+    use WebService::LOC::CongRec::Crawler;
+    use Log::Log4perl;
     Log::Log4perl->init_once('log4perl.conf');
-    $crawler = CongRec::Crawler->new();
+    $crawler = WebService::LOC::CongRec::Crawler->new();
     $crawler->goForth();
 
 =head1 ATTRIBUTES
@@ -35,7 +36,7 @@ has 'issuesRoot' => (
     default => 'http://thomas.loc.gov/home/Browse.php?&n=Issues',
 );
 
-=item days
+=item issues
 
 A hash of issues: %issues{year}{month}{day}{section}
 
@@ -66,14 +67,19 @@ has 'mech' => (
 
 sub _build_mech {
     return WWW::Mechanize->new(
-        agent => 'CongRec http://github.com/dinomite/CongRec; ' .
+        agent => 'CongRec https://github.com/dinomite/WebService-LOC-CongRec; ' .
                     WWW::Mechanize->VERSION,
     );
 }
 
 =head1 METHODS
 
-=head3 goFrom()
+=head2 goForth()
+
+ $crawler->goForth();
+ $crawler->goForth(process => \&process_page);
+ $crawler->goForth(start => $x);
+ $crawler->goForth(end => $y);
 
 Start crawling from the Daily Digest issues page, i.e.
 http://thomas.loc.gov/home/Browse.php?&n=Issues
@@ -83,21 +89,41 @@ http://thomas.loc.gov/home/Browse.php?&n=Issues&c=NUM
 
 Returns the total number of pages grabbed.
 
+Accepts an optional processing function to perform for each page.
+
+Accpets optional page counter start and end ranges.  If neither are
+given, or given as zero, crawing starts from the beginning and
+goes until all pages are visited.
+
 =cut
 
 sub goForth {
-    my ($self) = @_;
-    $grabbed = 0
+    my $self = shift;
+    my $args = {
+        process => undef,
+        start   => 0,
+        end     => 0,
+        @_
+    };
+    my $n = \$args->{start};  # Page iterator
+    my $grabbed = 0;  # Pages seen.
+    my $seen = 0;  # Issues seen.
 
     $self->mech->get($self->issuesRoot);
     $self->parseRoot($self->mech->content);
 
     # Go through each of the days
     foreach my $day (@{$self->issues}) {
+        last if $args->{end} && $seen >= $args->{end};
+
         $self->log->info("Date: " . $day->date->strftime('%Y-%m-%d') . "; " . $day->house);
 
         # Each of the pages for day
         foreach my $pageURL (@{$day->pages}) {
+            last if $args->{end} && $seen >= $args->{end};
+            $seen++;  # Increment issue.
+            next if $args->{start} && $seen < $args->{start};
+
             $self->log->debug("Getting page: $pageURL");
 
             my $webPage = WebService::LOC::CongRec::Page->new(
@@ -105,18 +131,18 @@ sub goForth {
                     url => $pageURL,
             );
 
-            # Do something here (put it in a DB perhaps)
-            # $day has the house and date
-            # $webPage has the pageID, summary, and content
+            # Invoke the callback if one was provided
+            $args->{process}->($day, $webPage) if $args->{process} && ref $args->{process} eq 'CODE';
 
-            $grabbed++;
+            $$n++;  # Increment page number visited.
+            $grabbed++;  # Increment total pages visited.
         }
     }
 
     return $grabbed;
 }
 
-=head3 parseRoot(Str $content)
+=head2 parseRoot(Str $content)
 
 Parse the the root of an issue an fill our hash of available issues
 

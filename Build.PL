@@ -8,7 +8,7 @@ Drew Stephens <drew@dinomite.net>
 
 =head1 CONTRIBUTORS
 
-None
+Gene Boggs <gene.boggs@gmail.com>
 
 =head1 COPYRIGHT
 
@@ -28,11 +28,11 @@ my $build = Module::Build->new (
     module_name     => 'WebService::LOC::CongRec',
     license         => 'perl',
     dist_author     => 'Drew Stephens <drew@dinomite.net>',
-    dist_version    => '0.1_04',
+    dist_version    => '0.1',
     test_author     => 'Drew Stephens <drew@dinomite.net>',
     dist_abstract   => 'Get the congressional record from thomas.loc.gov',
     build_requires  => {
-        'HTML::Strip'       => '1.06',
+        'HTML::TokeParser'  => '3.57',
         'Moose'             => '1.13',
         'MooseX::Log::Log4perl'     => '0.42',
         'MooseX::Types::DateTime'   => '0.05',
