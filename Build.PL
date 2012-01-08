@@ -8,11 +8,11 @@ Drew Stephens <drew@dinomite.net>
 
 =head1 CONTRIBUTORS
 
-Gene Boggs <gene.boggs@gmail.com>
+Gene Boggs <gene@cpan.org>
 
 =head1 COPYRIGHT
 
-Copyright 2010, Drew Stephens
+Copyright 2012, Drew Stephens
 
 =head1 DESCRIPTION
 
@@ -28,7 +28,7 @@ my $build = Module::Build->new (
     module_name     => 'WebService::LOC::CongRec',
     license         => 'perl',
     dist_author     => 'Drew Stephens <drew@dinomite.net>',
-    dist_version    => '0.1',
+    dist_version    => '0.2',
     test_author     => 'Drew Stephens <drew@dinomite.net>',
     dist_abstract   => 'Get the congressional record from thomas.loc.gov',
     build_requires  => {
