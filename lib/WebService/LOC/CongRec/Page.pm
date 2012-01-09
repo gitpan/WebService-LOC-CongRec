@@ -1,5 +1,5 @@
 package WebService::LOC::CongRec::Page;
-our $VERSION = '0.1';
+our $VERSION = '0.3';
 use Moose;
 with 'MooseX::Log::Log4perl';
 
@@ -84,7 +84,6 @@ has 'content' => (
 sub BUILD {
     my ($self) = @_;
 
-warn"U: ",$self->url,"\n";
     $self->mech->get($self->url);
     eval { $self->mech->follow_link(text => 'Printer Friendly Display'); };
 
