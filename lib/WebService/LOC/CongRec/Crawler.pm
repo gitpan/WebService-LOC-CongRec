@@ -1,5 +1,5 @@
 package WebService::LOC::CongRec::Crawler;
-our $VERSION = '0.3';
+our $VERSION = '0.4';
 use Moose;
 with 'MooseX::Log::Log4perl';
 
@@ -16,11 +16,24 @@ use HTML::TokeParser;
     use Log::Log4perl;
     Log::Log4perl->init_once('log4perl.conf');
     $crawler = WebService::LOC::CongRec::Crawler->new();
+    $crawler->congress(107);
+    $crawler->oldest(1);
     $crawler->goForth();
 
 =head1 ATTRIBUTES
 
 =over 1
+
+=item congress
+
+The numbered congress to be fetched.  If this is not given, the current congress is fetched.
+
+=cut
+
+has 'congress' => (
+    is  => 'rw',
+    isa => 'Int',
+);
 
 =item issuesRoot
 
@@ -60,6 +73,20 @@ has 'mech' => (
     is          => 'rw',
     isa         => 'Object',
     builder     => '_build_mech',
+);
+
+=item oldest
+
+Boolean attribute specifying that pages are visited from earliest to most recent.
+
+The default is 0 - that is visit most recent first.
+
+=cut
+
+has 'oldest' => (
+    is          => 'rw',
+    isa         => 'Bool',
+    default     => 0,
 );
 
 =back
@@ -110,7 +137,10 @@ sub goForth {
     my $grabbed = 0;  # Pages seen.
     my $seen = 0;  # Issues seen.
 
-    $self->mech->get($self->issuesRoot);
+    my $url = $self->issuesRoot;
+    $url .= '&c=' . $self->congress if $self->congress;
+
+    $self->mech->get($url);
     $self->parseRoot($self->mech->content);
 
     # Go through each of the days
@@ -161,26 +191,51 @@ sub parseRoot {
     while (my $t = $p->get_token) {
         my ($ttype, $ttag) = ($t->[0], $t->[1]);
 
-        if ($ttype eq 'S' && $ttag eq 'th') {
+        if ($ttype eq 'S' && $ttag eq 'td') {
             $text = $p->get_trimmed_text("/$ttag");
         }
-        elsif ($ttype eq 'E' && $ttag eq 'th' && $text =~ /^\w+ (\d{4})$/) {
+        # Old HTML type for pre-111 congress pages.
+        elsif ($ttype eq 'E' && $ttag eq 'td' && $text =~ /^([A-Za-z]+)\s+(\d{4})$/) {
+            ($month, $year) = ($1, $2);
+            if ($year and $month and $day) {
+                $month = WebService::LOC::CongRec::Util->getMonthNumberFromString($month);
+                $self->_dayToIssues($year, $month, $day);
+            }
+        }
+        elsif ($ttype eq 'E' && $ttag eq 'td' && $text =~ /^([A-Za-z]+)\s+(\d{1,2})$/) {
+            ($month, $day) = ($1, $2);
+        }
+        # New HTML type for post-111 congress pages.
+        elsif ($ttype eq 'S' && $ttag eq 'th') {
+            $text = $p->get_trimmed_text("/$ttag");
+        }
+        elsif ($ttype eq 'E' && $ttag eq 'th' && $text =~ /^[A-Za-z]+\s+(\d{4})$/) {
             $year = $1;
-        }
-        elsif ($ttype eq 'S' && $ttag eq 'td') {
-            $text = $p->get_trimmed_text("/$ttag");
         }
         elsif ($ttype eq 'E' && $ttag eq 'td' && $text =~ /^(\d+)\/(\d+)$/) {
             ($month, $day) = ($1, $2);
-
-            # Create a Day object for each section.
-            for my $section (qw(h s e d)) {
-                my $date = DateTime->new(year => $year, month => $month, day => $day, time_zone => 'America/Los_Angeles');
-                push @{$self->issues}, $self->makeDay($date, $section);
+            if ($year and $month and $day) {
+                $self->_dayToIssues($year, $month, $day);
             }
         }
     }
 }
+
+sub _dayToIssues {
+    my($self, $year, $month, $day) = @_;
+
+    # Create a Day object for each section.
+    for my $section (qw(h s e d)) {
+        my $date = DateTime->new(year => $year, month => $month, day => $day, time_zone => 'America/Los_Angeles');
+        if ($self->oldest) {
+            unshift @{$self->issues}, $self->makeDay($date, $section);
+        }
+        else {
+            push @{$self->issues}, $self->makeDay($date, $section);
+        }
+    }
+}
+
 
 sub makeDay {
     my ($self, $date, $house) = @_;
